@@ -10,11 +10,12 @@ Creation: Feb 14, 2018
 import random
 #TODO: import t3_agent as agent # <- implement and include your own learning agent
 import t3_engine as engine
+import t3_agent as agent
 
 
 #Some definitions to configure the behaviour of this controller
-training_mode = False
-
+training_mode = True
+model_file_name = "model.json"
 
 #control both training and playing
 def main():
@@ -26,6 +27,23 @@ def main():
     #train a RL agent by self-play
     if training_mode:
         print('TODO')
+        board = engine.get_initial_board()
+        print('You are player O, the computer starts.')
+        while True:
+            turn = engine.whos_turn(board)
+            if turn=='X':             
+                field = agent.get_next_move(board, turn)
+                oldBoard = board
+                board = engine.make_move(board, field, turn)
+                agent.set_terminal_value(board, turn)
+                agent.update_value(oldBoard, board)
+                assert(board!='')
+            else: #get player's input (until valid) and make the respective move
+                while True: 
+                    field = input("Which field to set? ")
+                    board = engine.make_move(board, field, turn)
+                    if board!='':
+                        break
             
     #apply a trained RL agent in a game aghainst a human
     else: #training_mode==False
