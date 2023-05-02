@@ -1,15 +1,24 @@
+import json
 import random
 import t3_engine as engine
-import t3_states as state
+
 
 exploration = 0.1
 learning_rate = 0.05
+
+
+def init(val):
+    global state_table
+    global ai
+    ai = val
+    state_table = {'         ':0.5}
     
 # return either the move with the highest value, 
 # a random move with probability exploration 
 # or -1 if no move is possible
 def get_next_move(board, player):
     emptyFields = [i for i in range(len(board)) if board[i].isspace()]
+    emptyFields = [i+1 for i in emptyFields]
     bestMove = -1
     bestValue = -1
 
@@ -19,10 +28,10 @@ def get_next_move(board, player):
     for field in emptyFields:
         currentBoard = engine.insert_symbol(board, player, field)
 
-        if currentBoard in state.table:
-            currentValue = state.table[currentBoard]
+        if currentBoard in state_table:
+            currentValue = state_table[currentBoard]
         else:
-            state.table[currentBoard] = currentValue = 0.5
+            state_table[currentBoard] = currentValue = 0.5
         
         if(currentValue > bestValue):
             bestValue = currentValue 
@@ -30,28 +39,34 @@ def get_next_move(board, player):
     
     return bestMove
 
-def set_terminal_value(S_t1, player):
+def set_terminal_value(S_t1):
     result = engine.evaluate(S_t1)
     if(result[0] == True):
-        if(result[1] == player):
-            state.table[S_t1] = 1
+        if(result[1] == ai):
+            state_table[S_t1] = 1
         else:
-            state.table[S_t1] = 0
+            state_table[S_t1] = 0
 
 # updates values in the state table
 def update_value(S_t, S_t1):
-    if S_t in state.table and S_t1 in state.table:
-        state.table[S_t] = state.table[S_t] + learning_rate * (state.table[S_t1] - state.table[S_t])
+    if S_t in state_table and S_t1 in state_table:
+        state_table[S_t] = state_table[S_t] + learning_rate * (state_table[S_t1] - state_table[S_t])
 
+def export_model():
+    with open("model.json", "w") as outfile:
+        json.dump(state_table, outfile)
 
 
 ### COMPETITIVE MODE ###
 def load_model(filename):
-    state.import_model(filename)
+    with open(filename) as infile:
+        model = json.load(infile)
+    return model
 
 
 def get_best_action(board, model, turn):
     emptyFields = [i for i in range(len(board)) if board[i].isspace()]
+    [i+1 for i in emptyFields]
 
     bestMove = -1
     bestValue = -1
@@ -70,4 +85,4 @@ def get_best_action(board, model, turn):
             bestValue = currentValue 
             bestMove = field
     
-    return bestMove
+    return bestMove+1

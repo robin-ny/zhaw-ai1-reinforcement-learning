@@ -27,24 +27,42 @@ def main():
     #train a RL agent by self-play
     if training_mode:
         print('TODO')
+        agent.init('X')
         board = engine.get_initial_board()
+        oldBoard = board
         print('You are player O, the computer starts.')
         while True:
             turn = engine.whos_turn(board)
             if turn=='X':             
                 field = agent.get_next_move(board, turn)
-                oldBoard = board
                 board = engine.make_move(board, field, turn)
-                agent.set_terminal_value(board, turn)
+                agent.set_terminal_value(board)
                 agent.update_value(oldBoard, board)
+                oldBoard = board
                 assert(board!='')
             else: #get player's input (until valid) and make the respective move
                 while True: 
                     field = input("Which field to set? ")
-                    board = engine.make_move(board, field, turn)
-                    if board!='':
+                    if(engine.make_move(board, field, turn) !='') :
+                        board = engine.make_move(board, field, turn)
+                        agent.set_terminal_value(board)
+                        agent.update_value(oldBoard, board)
                         break
+
+            #print new state, evaluate game
+            print('Game after ' + turn + "'s move: ")
+            engine.print_board(board, False)
+            game_over, who_won, reward = engine.evaluate(board)
             
+            if game_over:
+                print('The game is over. ' + who_won + ' won.')
+                board = engine.get_initial_board()
+                oldBoard = board
+                agent.export_model()
+            
+
+
+
     #apply a trained RL agent in a game aghainst a human
     else: #training_mode==False
         board = engine.get_initial_board()
@@ -60,8 +78,8 @@ def main():
             else: #get player's input (until valid) and make the respective move
                 while True: 
                     field = input("Which field to set? ")
-                    board = engine.make_move(board, field, turn)
-                    if board!='':
+                    if(engine.make_move(board, field, turn) !='') :
+                        board = engine.make_move(board, field, turn)
                         break
             
             #print new state, evaluate game
