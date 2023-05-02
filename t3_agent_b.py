@@ -8,10 +8,10 @@ learning_rate = 0.1
 
 
 def init(val):
-    global state_table
-    global ai
-    ai = val
-    state_table = {'         ':0.5}
+    global temp
+    global pc
+    pc = val
+    temp = {'         ':0.5}
     
 # return either the move with the highest value, 
 # a random move with probability exploration 
@@ -28,10 +28,10 @@ def get_next_move(board, player):
     for field in emptyFields:
         currentBoard = engine.insert_symbol(board, player, field)
 
-        if currentBoard in state_table:
-            currentValue = state_table[currentBoard]
+        if currentBoard in temp:
+            currentValue = temp[currentBoard]
         else:
-            state_table[currentBoard] = currentValue = 0.5
+            temp[currentBoard] = currentValue = 0.5
         
         if(currentValue > bestValue):
             bestValue = currentValue 
@@ -42,19 +42,19 @@ def get_next_move(board, player):
 def set_terminal_value(S_t1):
     result = engine.evaluate(S_t1)
     if(result[0] == True):
-        if(result[1] == ai):
-            state_table[S_t1] = 1
+        if(result[1] == pc):
+            temp[S_t1] = 1
         else:
-            state_table[S_t1] = 0
+            temp[S_t1] = 0
 
 # updates values in the state table
 def update_value(S_t, S_t1):
-    if S_t in state_table and S_t1 in state_table:
-        state_table[S_t] = state_table[S_t] + learning_rate * (state_table[S_t1] - state_table[S_t])
+    if S_t in temp and S_t1 in temp:
+        temp[S_t] = temp[S_t] + learning_rate * (temp[S_t1] - temp[S_t])
 
 def export_model():
-    with open("model.json", "w") as outfile:
-        json.dump(state_table, outfile)
+    with open("model_b.json", "w") as outfile:
+        json.dump(temp, outfile)
 
 
 ### COMPETITIVE MODE ###
@@ -76,10 +76,10 @@ def get_best_action(board, model, turn):
     for field in emptyFields:
         currentBoard = engine.insert_symbol(board, turn, field)
 
-        if currentBoard in model:
-            currentValue = model[currentBoard]
+        if currentBoard in model.table:
+            currentValue = model.table[currentBoard]
         else:
-            model[currentBoard] = currentValue = 0.5
+            model.table[currentBoard] = currentValue = 0.5
         
         if(currentValue > bestValue):
             bestValue = currentValue 
