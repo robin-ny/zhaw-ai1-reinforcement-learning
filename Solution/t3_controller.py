@@ -73,7 +73,7 @@ def main():
         playerOrder = engine.randomize_player_order()
         model = load_model("./agent.json")
         agent = Agent('X',training_mode,state_table=model)
-        print('You are player O, the computer starts.')
+        print('You are player O, ' + playerOrder[0] + ' starts!')
         
         while True:
             turn = engine.whos_turn(board, playerOrder)
