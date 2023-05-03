@@ -31,6 +31,9 @@ X's turn iif the number of free fields is 9/7/5/3/1 -> uneven; otherwise it is
 O's turn.
 """
 
+import random
+
+
 def insert_symbol(board, symbol, field):
     """
     Return a new BOARD by inserting the character SYMBOL at the index position 
@@ -116,18 +119,21 @@ def count_symbol(board, symbol):
     return count
 
 
-def whos_turn(board):
+def whos_turn(board, playerOrder):
     """
     Returns the SYMBOL of the player who's turn it is: it is X's turn iif the 
     number of free fields is 9/7/5/3/1 -> uneven; otherwise it is O's turn.
     """
     free_fields = count_symbol(board, ' ')
     if free_fields%2 > 0: #i.e., free_field is uneven
-        return 'X'
+        return playerOrder[0]
     else:
-        return 'O'
+        return playerOrder[1]
 
-    
+def randomize_player_order():
+    if(random.random() <= 0.5): return ('X','O')
+    else: return ('O', 'X')
+
 def get_initial_board():
     """
     Returns an empty BOARD so that a user does not need to have knowledge of 

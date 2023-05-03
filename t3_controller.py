@@ -32,9 +32,9 @@ def main():
             opponent = Agent('O',training_mode,model_name="opponent.json",state_table={})
             gamesPlayed = 1
             board = engine.get_initial_board()
-
+            playerOrder = engine.randomize_player_order()
             while True:
-                turn = engine.whos_turn(board)
+                turn = engine.whos_turn(board, playerOrder)
                 if turn=='X':             
                     field = agent.get_next_move(board)
                     board = engine.make_move(board, field, turn)
@@ -58,6 +58,7 @@ def main():
                     board = engine.get_initial_board()
                     agent.oldBoard = board
                     opponent.oldBoard = board
+                    playerOrder = engine.randomize_player_order()
 
         except KeyboardInterrupt:
             agent.export_model()
@@ -69,12 +70,13 @@ def main():
     #apply a trained RL agent in a game aghainst a human
     else: #training_mode==False
         board = engine.get_initial_board()
+        playerOrder = engine.randomize_player_order()
         model = load_model("./agent.json")
         agent = Agent('X',training_mode,state_table=model)
         print('You are player O, the computer starts.')
         
         while True:
-            turn = engine.whos_turn(board)
+            turn = engine.whos_turn(board, playerOrder)
             if turn=='X': #get the agent's input, make the respective move                
                 field = agent.get_next_move(board) # <- API to fulfill by own agent implementation: return the best possible move (field# 1-9, according to learnt model) in the given state; the board has a format specified in t3_engine.py
                 board = engine.make_move(board, field, turn)
