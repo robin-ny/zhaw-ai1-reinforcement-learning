@@ -10,8 +10,7 @@ Creation: Feb 14, 2018
 import random
 #TODO: import t3_agent as agent # <- implement and include your own learning agent
 import t3_engine as engine
-import t3_agent as agent
-import t3_agent_b as opponent
+from t3_agent import Agent, load_model
 
 
 #Some definitions to configure the behaviour of this controller
@@ -29,42 +28,37 @@ def main():
     #train a RL agent by self-play
     if training_mode:
         try:
-            agent.init('X')
-            opponent.init('O')
+            agent = Agent('X',training_mode,model_name="agent.json",state_table={})
+            opponent = Agent('O',training_mode,model_name="opponent.json",state_table={})
             gamesPlayed = 1
             board = engine.get_initial_board()
-            oldBoard = board
-            oldBoardB = board
+
             while True:
                 turn = engine.whos_turn(board)
                 if turn=='X':             
-                    field = agent.get_next_move(board, turn)
+                    field = agent.get_next_move(board)
                     board = engine.make_move(board, field, turn)
-                    agent.set_terminal_value(board)
-                    agent.update_value(oldBoard, board)
-                    opponent.set_terminal_value(board)
-                    opponent.update_value(oldBoardB, board)
-                    oldBoard = board
+                    agent.update_value(board)
                     assert(board!='')
                 else: #get player's input (until valid) and make the respective move
-                    field = opponent.get_next_move(board, turn)
+                    field = opponent.get_next_move(board)
                     board = engine.make_move(board, field, turn)
-                    opponent.set_terminal_value(board)
-                    opponent.update_value(oldBoardB, board)
-                    agent.set_terminal_value(board)
-                    agent.update_value(oldBoard, board)
-                    oldBoardB = board
+                    opponent.update_value(board)
                     assert(board!='')
 
                 #print new state, evaluate game
                 game_over, who_won, reward = engine.evaluate(board)
+                #engine.print_board(board, False)
                 
                 if game_over:
                     print('The game ' + str(gamesPlayed) + ' is over. ' + who_won + ' won.')
                     gamesPlayed += 1
+                    agent.update_value(board)
+                    opponent.update_value(board)
                     board = engine.get_initial_board()
-                    oldBoard = board
-                    oldBoardB = board
+                    agent.oldBoard = board
+                    opponent.oldBoard = board
+
         except KeyboardInterrupt:
             agent.export_model()
             opponent.export_model()
@@ -75,13 +69,14 @@ def main():
     #apply a trained RL agent in a game aghainst a human
     else: #training_mode==False
         board = engine.get_initial_board()
-        model = agent.load_model("./model.json") # <- API to fulfill by own agent implementation: load a trained model from a file (the model can have any format, as only your agent is going to use it internally)
+        model = load_model("./agent.json")
+        agent = Agent('X',training_mode,state_table=model)
         print('You are player O, the computer starts.')
         
         while True:
             turn = engine.whos_turn(board)
             if turn=='X': #get the agent's input, make the respective move                
-                field = agent.get_best_action(board, model, turn) # <- API to fulfill by own agent implementation: return the best possible move (field# 1-9, according to learnt model) in the given state; the board has a format specified in t3_engine.py
+                field = agent.get_next_move(board) # <- API to fulfill by own agent implementation: return the best possible move (field# 1-9, according to learnt model) in the given state; the board has a format specified in t3_engine.py
                 board = engine.make_move(board, field, turn)
                 assert(board!='')
             else: #get player's input (until valid) and make the respective move

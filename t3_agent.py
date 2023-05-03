@@ -2,87 +2,66 @@ import json
 import random
 import t3_engine as engine
 
+class Agent:
 
-exploration = 0.1
-learning_rate = 0.1
+    def __init__(self, symbol, training = False, exploration = 0.1, learning_rate = 0.1, state_table = {}, model_name = "model.json"):
+        self.symbol = symbol
+        self.exploration = exploration
+        self.learning_rate = learning_rate
+        self.state_table = state_table
+        self.model_name = model_name
+        self.training = training
+        self.oldBoard = engine.get_initial_board()
 
+    # return either the move with the highest value, 
+    # a random move with probability exploration 
+    # or -1 if no move is possible
+    def get_next_move(self, board):
+        emptyFields = [i for i in range(len(board)) if board[i].isspace()]
+        emptyFields = [i+1 for i in emptyFields]
+        bestMove = -1
+        bestValue = -1
 
-def init(val):
-    global state_table
-    global ai
-    ai = val
-    state_table = {'         ':0.5}
-    
-# return either the move with the highest value, 
-# a random move with probability exploration 
-# or -1 if no move is possible
-def get_next_move(board, player):
-    emptyFields = [i for i in range(len(board)) if board[i].isspace()]
-    emptyFields = [i+1 for i in emptyFields]
-    bestMove = -1
-    bestValue = -1
+        if(emptyFields.count == 0): return bestMove
+        if(self.training):
+            if(random.random() < self.exploration): return random.choice(emptyFields) # exploration
 
-    if(emptyFields.count == 0): return bestMove  
-    if(random.random() < exploration): return random.choice(emptyFields) # exploration
+        for field in emptyFields:
+            currentBoard = engine.insert_symbol(board, self.symbol, field)
 
-    for field in emptyFields:
-        currentBoard = engine.insert_symbol(board, player, field)
-
-        if currentBoard in state_table:
-            currentValue = state_table[currentBoard]
-        else:
-            state_table[currentBoard] = currentValue = 0.5
+            if currentBoard in self.state_table:
+                currentValue = self.state_table[currentBoard]
+            else:
+                self.state_table[currentBoard] = currentValue = 0.5
+            
+            if(currentValue > bestValue):
+                bestValue = currentValue 
+                bestMove = field
         
-        if(currentValue > bestValue):
-            bestValue = currentValue 
-            bestMove = field
+        return bestMove
+
+    # updates values in the state table
+    def update_value(self, S_t1):
+        S_t = self.oldBoard
+        result = engine.evaluate(S_t1)
+        if(result[0] == True):
+            if(result[1] == self.symbol):
+                self.state_table[S_t1] = 1
+            else:
+                self.state_table[S_t1] = 0
+
+        if S_t in self.state_table and S_t1 in self.state_table:
+            self.state_table[S_t] = self.state_table[S_t] + self.learning_rate * (self.state_table[S_t1] - self.state_table[S_t])
+        self.oldBoard = S_t1
+
+    def export_model(self):
+        with open(self.model_name, "w") as outfile:
+            json.dump(self.state_table, outfile)
+
+
     
-    return bestMove
-
-def set_terminal_value(S_t1):
-    result = engine.evaluate(S_t1)
-    if(result[0] == True):
-        if(result[1] == ai):
-            state_table[S_t1] = 1
-        else:
-            state_table[S_t1] = 0
-
-# updates values in the state table
-def update_value(S_t, S_t1):
-    if S_t in state_table and S_t1 in state_table:
-        state_table[S_t] = state_table[S_t] + learning_rate * (state_table[S_t1] - state_table[S_t])
-
-def export_model():
-    with open("model.json", "w") as outfile:
-        json.dump(state_table, outfile)
-
-
-### COMPETITIVE MODE ###
 def load_model(filename):
     with open(filename) as infile:
         model = json.load(infile)
     return model
-
-
-def get_best_action(board, model, turn):
-    emptyFields = [i for i in range(len(board)) if board[i].isspace()]
-    [i+1 for i in emptyFields]
-
-    bestMove = -1
-    bestValue = -1
-
-    if(emptyFields.count == 0): return bestMove
-
-    for field in emptyFields:
-        currentBoard = engine.insert_symbol(board, turn, field)
-
-        if currentBoard in model:
-            currentValue = model[currentBoard]
-        else:
-            model[currentBoard] = currentValue = 0.5
-        
-        if(currentValue > bestValue):
-            bestValue = currentValue 
-            bestMove = field
     
-    return bestMove+1
